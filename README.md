@@ -2,6 +2,8 @@
 
 A sleek, browser-based visual editor for SSH config files. No installation, no dependencies — just open and use.
 
+![Screenshot](screenshot.png)
+
 ## Features
 
 - **Import & Export** — Paste or drag-and-drop your `~/.ssh/config` file, edit visually, then export back
