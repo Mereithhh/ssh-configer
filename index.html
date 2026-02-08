@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSH Config Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e14;
+      --bg-secondary: #0f1419;
+      --bg-tertiary: #151b23;
+      --bg-card: #1a212b;
+      --bg-card-hover: #212937;
+      --border-color: #2d3748;
+      --border-glow: #39d353;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent-green: #39d353;
+      --accent-green-dim: #238636;
+      --accent-cyan: #58a6ff;
+      --accent-orange: #f0883e;
+      --accent-purple: #a371f7;
+      --accent-pink: #f778ba;
+      --accent-red: #f85149;
+      --shadow-glow: 0 0 20px rgba(57, 211, 83, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Background Pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(57, 211, 83, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(88, 166, 255, 0.05), transparent);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: var(--bg-primary);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      background: #4ae062;
+      box-shadow: 0 0 20px rgba(57, 211, 83, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card);
+      border-color: var(--accent-cyan);
+    }
+
+    .btn-danger {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--accent-red);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(248, 81, 73, 0.25);
+    }
+
+    .btn-icon {
+      padding: 0.5rem;
+      width: 36px;
+      height: 36px;
+      justify-content: center;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(57, 211, 83, 0.1);
+    }
+
+    .search-box::before {
+      content: '⌕';
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Main Layout */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Host Cards Grid */
+    .hosts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .host-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .host-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .host-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-green);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .host-card:hover::before {
+      opacity: 1;
+    }
+
+    .host-card.selected {
+      border-color: var(--accent-green);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .host-card.selected::before {
+      opacity: 1;
+    }
+
+    .host-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .host-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+
+    .host-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(163, 113, 247, 0.15);
+      color: var(--accent-purple);
+      font-weight: 500;
+    }
+
+    .host-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .host-detail {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .host-detail-label {
+      color: var(--text-muted);
+      min-width: 70px;
+    }
+
+    .host-detail-value {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+      font-size: 0.8rem;
+    }
+
+    .host-detail-value.proxy {
+      color: var(--accent-orange);
+    }
+
+    /* Editor Panel */
+    .editor-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: sticky;
+      top: 2rem;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+    }
+
+    .editor-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .editor-title span {
+      color: var(--accent-cyan);
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(57, 211, 83, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .editor-actions .btn {
+      flex: 1;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .config-preview {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      color: var(--text-secondary);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .config-preview .host-line {
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    .config-preview .key {
+      color: var(--accent-cyan);
+    }
+
+    .config-preview .value {
+      color: var(--text-primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+
+    /* Import Area */
+    .import-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .import-area:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .import-area.dragover {
+      border-color: var(--accent-green);
+      background: rgba(57, 211, 83, 0.1);
+    }
+
+    .import-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .import-text {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .import-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 2000;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .toast.success {
+      border-color: var(--accent-green);
+    }
+
+    .toast.error {
+      border-color: var(--accent-red);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Hidden file input */
+    .hidden-input {
+      display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        min-width: 100%;
+      }
+
+      .hosts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">SSH</div>
+        <h1>SSH Config Editor</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="openImportModal()">
+          <span>📥</span> 导入配置
+        </button>
+        <button class="btn btn-secondary" onclick="openExportModal()">
+          <span>📤</span> 导出配置
+        </button>
+        <button class="btn btn-primary" onclick="addNewHost()">
+          <span>➕</span> 新建主机
+        </button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索主机名、IP、用户..." oninput="filterHosts()">
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <span>主机总数:</span>
+          <span class="stat-value" id="totalCount">0</span>
+        </div>
+        <div class="stat">
+          <span>使用跳板机:</span>
+          <span class="stat-value" id="proxyCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="hosts-container">
+        <div class="hosts-grid" id="hostsGrid">
+          <div class="empty-state">
+            <div class="empty-icon">🔐</div>
+            <div class="empty-title">暂无 SSH 配置</div>
+            <p>点击「导入配置」加载现有配置，或点击「新建主机」创建新配置</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-panel" id="editorPanel">
+        <div class="editor-title">
+          <span>✏️</span> 编辑主机配置
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Host (别名) *</label>
+          <input type="text" class="form-input" id="editHost" placeholder="例如: my-server">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">HostName (主机地址) *</label>
+          <input type="text" class="form-input" id="editHostName" placeholder="例如: 192.168.1.1 或 example.com">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">User (用户名)</label>
+            <input type="text" class="form-input" id="editUser" placeholder="例如: root">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Port (端口)</label>
+            <input type="text" class="form-input" id="editPort" placeholder="默认: 22">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">IdentityFile (密钥文件)</label>
+          <input type="text" class="form-input" id="editIdentityFile" placeholder="例如: ~/.ssh/id_rsa">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ProxyJump (跳板机)</label>
+          <input type="text" class="form-input" id="editProxyJump" placeholder="例如: jump-server">
+        </div>
+
+        <div class="editor-actions">
+          <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
+          <button class="btn btn-danger" id="deleteBtn" onclick="deleteHost()" style="display: none;">删除</button>
+          <button class="btn btn-primary" onclick="saveHost()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">📥 导入 SSH 配置</h2>
+        <button class="modal-close" onclick="closeModal('importModal')">&times;</button>
+      </div>
+      
+      <div class="import-area" id="dropZone">
+        <div class="import-icon">📁</div>
+        <p class="import-text">拖拽 SSH 配置文件到此处，或</p>
+        <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+          选择文件
+        </button>
+        <input type="file" id="fileInput" class="hidden-input" accept=".config,config,*" onchange="handleFileSelect(event)">
+        <p class="import-hint">支持标准 SSH config 格式</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">或粘贴配置内容:</label>
+        <textarea class="form-input" id="importTextarea" rows="10" placeholder="粘贴你的 SSH 配置内容..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('importModal')">取消</button>
+        <button class="btn btn-primary" onclick="importConfig()">导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">📤 导出 SSH 配置</h2>
+        <button class="modal-close" onclick="closeModal('exportModal')">&times;</button>
+      </div>
+      
+      <div class="config-preview" id="exportPreview"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('exportModal')">关闭</button>
+        <button class="btn btn-secondary" onclick="downloadConfig()">
+          <span>💾</span> 下载文件
+        </button>
+        <button class="btn btn-primary" onclick="copyConfig()">
+          <span>📋</span> 复制到剪贴板
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // State
+    let hosts = [];
+    let currentEditIndex = -1;
+    let filteredHosts = [];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDragAndDrop();
+      renderHosts();
+    });
+
+    // Parse SSH Config
+    function parseSSHConfig(content) {
+      const hosts = [];
+      const lines = content.split('\n');
+      let currentHost = null;
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line || line.startsWith('#')) continue;
+
+        const hostMatch = line.match(/^Host\s+(.+)$/i);
+        if (hostMatch) {
+          if (currentHost) {
+            hosts.push(currentHost);
+          }
+          currentHost = {
+            Host: hostMatch[1].trim(),
+            HostName: '',
+            User: '',
+            Port: '',
+            IdentityFile: '',
+            ProxyJump: ''
+          };
+          continue;
+        }
+
+        if (currentHost) {
+          const keyValue = line.match(/^\s*(\w+)\s+(.+)$/);
+          if (keyValue) {
+            const key = keyValue[1];
+            const value = keyValue[2].trim();
+            if (key in currentHost) {
+              currentHost[key] = value;
+            }
+          }
+        }
+      }
+
+      if (currentHost) {
+        hosts.push(currentHost);
+      }
+
+      return hosts;
+    }
+
+    // Generate SSH Config
+    function generateSSHConfig() {
+      return hosts.map(host => {
+        let config = `Host ${host.Host}`;
+        if (host.HostName) config += `\n  HostName ${host.HostName}`;
+        if (host.User) config += `\n  User ${host.User}`;
+        if (host.Port) config += `\n  Port ${host.Port}`;
+        if (host.IdentityFile) config += `\n  IdentityFile ${host.IdentityFile}`;
+        if (host.ProxyJump) config += `\n  ProxyJump ${host.ProxyJump}`;
+        return config;
+      }).join('\n\n');
+    }
+
+    // Render Hosts
+    function renderHosts() {
+      const grid = document.getElementById('hostsGrid');
+      const displayHosts = filteredHosts.length > 0 || document.getElementById('searchInput').value ? filteredHosts : hosts;
+      
+      if (hosts.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔐</div>
+            <div class="empty-title">暂无 SSH 配置</div>
+            <p>点击「导入配置」加载现有配置，或点击「新建主机」创建新配置</p>
+          </div>
+        `;
+        updateStats();
+        return;
+      }
+
+      if (displayHosts.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">未找到匹配的主机</div>
+            <p>尝试其他搜索关键词</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = displayHosts.map((host, idx) => {
+        const realIndex = hosts.indexOf(host);
+        return `
+          <div class="host-card ${realIndex === currentEditIndex ? 'selected' : ''}" onclick="selectHost(${realIndex})">
+            <div class="host-header">
+              <div class="host-name">${escapeHtml(host.Host)}</div>
+              ${host.ProxyJump ? '<div class="host-badge">跳板</div>' : ''}
+            </div>
+            <div class="host-details">
+              <div class="host-detail">
+                <span class="host-detail-label">地址</span>
+                <span class="host-detail-value">${escapeHtml(host.HostName || '-')}</span>
+              </div>
+              <div class="host-detail">
+                <span class="host-detail-label">用户</span>
+                <span class="host-detail-value">${escapeHtml(host.User || '-')}</span>
+              </div>
+              <div class="host-detail">
+                <span class="host-detail-label">端口</span>
+                <span class="host-detail-value">${escapeHtml(host.Port || '22')}</span>
+              </div>
+              ${host.ProxyJump ? `
+              <div class="host-detail">
+                <span class="host-detail-label">跳板机</span>
+                <span class="host-detail-value proxy">${escapeHtml(host.ProxyJump)}</span>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateStats();
+    }
+
+    // Update Stats
+    function updateStats() {
+      document.getElementById('totalCount').textContent = hosts.length;
+      document.getElementById('proxyCount').textContent = hosts.filter(h => h.ProxyJump).length;
+    }
+
+    // Filter Hosts
+    function filterHosts() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      if (!query) {
+        filteredHosts = [];
+      } else {
+        filteredHosts = hosts.filter(host => 
+          host.Host.toLowerCase().includes(query) ||
+          host.HostName.toLowerCase().includes(query) ||
+          host.User.toLowerCase().includes(query) ||
+          host.ProxyJump.toLowerCase().includes(query)
+        );
+      }
+      renderHosts();
+    }
+
+    // Select Host
+    function selectHost(index) {
+      currentEditIndex = index;
+      const host = hosts[index];
+      
+      document.getElementById('editHost').value = host.Host;
+      document.getElementById('editHostName').value = host.HostName;
+      document.getElementById('editUser').value = host.User;
+      document.getElementById('editPort').value = host.Port;
+      document.getElementById('editIdentityFile').value = host.IdentityFile;
+      document.getElementById('editProxyJump').value = host.ProxyJump;
+      document.getElementById('deleteBtn').style.display = 'block';
+      
+      renderHosts();
+    }
+
+    // Add New Host
+    function addNewHost() {
+      currentEditIndex = -1;
+      document.getElementById('editHost').value = '';
+      document.getElementById('editHostName').value = '';
+      document.getElementById('editUser').value = 'root';
+      document.getElementById('editPort').value = '22';
+      document.getElementById('editIdentityFile').value = '~/.ssh/id_rsa';
+      document.getElementById('editProxyJump').value = '';
+      document.getElementById('deleteBtn').style.display = 'none';
+      
+      renderHosts();
+      document.getElementById('editHost').focus();
+    }
+
+    // Save Host
+    function saveHost() {
+      const host = {
+        Host: document.getElementById('editHost').value.trim(),
+        HostName: document.getElementById('editHostName').value.trim(),
+        User: document.getElementById('editUser').value.trim(),
+        Port: document.getElementById('editPort').value.trim(),
+        IdentityFile: document.getElementById('editIdentityFile').value.trim(),
+        ProxyJump: document.getElementById('editProxyJump').value.trim()
+      };
+
+      if (!host.Host) {
+        showToast('请输入 Host 名称', 'error');
+        return;
+      }
+
+      if (!host.HostName) {
+        showToast('请输入 HostName 地址', 'error');
+        return;
+      }
+
+      // Check duplicate host name (except current editing)
+      const duplicateIndex = hosts.findIndex((h, i) => h.Host === host.Host && i !== currentEditIndex);
+      if (duplicateIndex !== -1) {
+        showToast('Host 名称已存在', 'error');
+        return;
+      }
+
+      if (currentEditIndex === -1) {
+        hosts.push(host);
+        showToast('主机添加成功', 'success');
+      } else {
+        hosts[currentEditIndex] = host;
+        showToast('主机更新成功', 'success');
+      }
+
+      filterHosts();
+      renderHosts();
+    }
+
+    // Delete Host
+    function deleteHost() {
+      if (currentEditIndex === -1) return;
+      
+      if (confirm(`确定删除主机 "${hosts[currentEditIndex].Host}" 吗？`)) {
+        hosts.splice(currentEditIndex, 1);
+        currentEditIndex = -1;
+        cancelEdit();
+        filterHosts();
+        renderHosts();
+        showToast('主机已删除', 'success');
+      }
+    }
+
+    // Cancel Edit
+    function cancelEdit() {
+      currentEditIndex = -1;
+      document.getElementById('editHost').value = '';
+      document.getElementById('editHostName').value = '';
+      document.getElementById('editUser').value = '';
+      document.getElementById('editPort').value = '';
+      document.getElementById('editIdentityFile').value = '';
+      document.getElementById('editProxyJump').value = '';
+      document.getElementById('deleteBtn').style.display = 'none';
+      renderHosts();
+    }
+
+    // Import Modal
+    function openImportModal() {
+      document.getElementById('importModal').classList.add('active');
+      document.getElementById('importTextarea').value = '';
+    }
+
+    function importConfig() {
+      const textarea = document.getElementById('importTextarea');
+      const content = textarea.value.trim();
+      
+      if (!content) {
+        showToast('请输入或选择配置文件', 'error');
+        return;
+      }
+
+      const parsed = parseSSHConfig(content);
+      if (parsed.length === 0) {
+        showToast('未能解析任何主机配置', 'error');
+        return;
+      }
+
+      hosts = parsed;
+      filteredHosts = [];
+      document.getElementById('searchInput').value = '';
+      closeModal('importModal');
+      renderHosts();
+      showToast(`成功导入 ${parsed.length} 个主机配置`, 'success');
+    }
+
+    // Export Modal
+    function openExportModal() {
+      if (hosts.length === 0) {
+        showToast('暂无配置可导出', 'error');
+        return;
+      }
+
+      const config = generateSSHConfig();
+      const preview = document.getElementById('exportPreview');
+      
+      // Syntax highlight
+      preview.innerHTML = config
+        .split('\n')
+        .map(line => {
+          if (line.startsWith('Host ')) {
+            return `<span class="host-line">${escapeHtml(line)}</span>`;
+          }
+          const match = line.match(/^(\s*)(\w+)(\s+)(.+)$/);
+          if (match) {
+            return `${match[1]}<span class="key">${match[2]}</span>${match[3]}<span class="value">${escapeHtml(match[4])}</span>`;
+          }
+          return escapeHtml(line);
+        })
+        .join('\n');
+
+      document.getElementById('exportModal').classList.add('active');
+    }
+
+    function copyConfig() {
+      const config = generateSSHConfig();
+      navigator.clipboard.writeText(config).then(() => {
+        showToast('配置已复制到剪贴板', 'success');
+      }).catch(() => {
+        showToast('复制失败', 'error');
+      });
+    }
+
+    function downloadConfig() {
+      const config = generateSSHConfig();
+      const blob = new Blob([config], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'config';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('配置文件已下载', 'success');
+    }
+
+    // Close Modal
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Drag and Drop
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          readFile(file);
+        }
+      });
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        readFile(file);
+      }
+    }
+
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('importTextarea').value = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    // Toast
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '✅' : '❌'}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Escape HTML
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+          modal.classList.remove('active');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
